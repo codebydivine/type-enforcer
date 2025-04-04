@@ -39,7 +39,7 @@ Beyond validation, Type Enforcer can convert compatible types (like dictionaries
 ## Installation
 
 ```bash
-pip install divine-type-enforcer
+pip install divine-type-enforcer==0.1.1
 ```
 
 ## Usage
