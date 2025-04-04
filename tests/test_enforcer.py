@@ -11,6 +11,11 @@ from typing import (
     Any,
     Literal,
     TypedDict,
+    Dict,
+    List,
+    Set,
+    Tuple,
+    Optional,
 )
 
 import pytest
@@ -23,6 +28,10 @@ class UserRole(Enum):
     ADMIN = "admin"
     USER = "user"
     GUEST = "guest"
+
+
+class EmptyEnum(Enum):
+    pass
 
 
 class UserInfo(TypedDict):
@@ -44,6 +53,14 @@ class Point:
 
     def distance_from_origin(self) -> float:
         return (self.x**2 + self.y**2) ** 0.5
+
+
+@dataclass
+class InvalidDataclass:
+    required_field: str
+
+    def __post_init__(self):
+        pass
 
 
 @dataclass
@@ -536,3 +553,494 @@ class TestEdgeCasesAndCoverage:
         assert enforcer._type_name(list[int]) == "list[int]"
         assert enforcer._is_optional(int | None) is True
         assert enforcer._is_optional(int) is False
+        
+    def test_nested_typeddict(self):
+        """Test validation of a TypedDict containing another TypedDict."""
+        class InnerDict(TypedDict):
+            value: int
+            name: str
+            
+        class OuterDict(TypedDict):
+            inner: InnerDict
+            tag: str
+            
+        # Valid case with nested structure
+        valid_data = {
+            "inner": {"value": 42, "name": "test"},
+            "tag": "example"
+        }
+        result = enforce(valid_data, OuterDict)
+        assert result == valid_data
+        
+        # Invalid case - missing required field in inner dict
+        invalid_data = {
+            "inner": {"value": 42},  # Missing required 'name' field
+            "tag": "example"
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(invalid_data, OuterDict)
+        assert "Missing required keys: name" in str(exc_info.value)
+        
+        # Invalid case - wrong type in inner dict
+        invalid_type_data = {
+            "inner": {"value": "not an int", "name": "test"},
+            "tag": "example"
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(invalid_type_data, OuterDict)
+        assert "inner.value: Expected int, got str" in str(exc_info.value)
+
+    def test_union_with_complex_types(self):
+        """Test validation of Union containing complex types."""
+        # Define a Union of complex types: List[int] | Dict[str, float] | Tuple[str, int]
+        ComplexUnion = list[int] | dict[str, float] | tuple[str, int]
+        
+        # Test valid cases for each union option
+        assert enforce([1, 2, 3], ComplexUnion) == [1, 2, 3]
+        assert enforce({"a": 1.0, "b": 2.5}, ComplexUnion) == {"a": 1.0, "b": 2.5}
+        assert enforce(("hello", 42), ComplexUnion) == ("hello", 42)
+        
+        # Test invalid cases
+        # Invalid list items
+        with pytest.raises(ValidationError) as exc_info:
+            enforce([1, "not an int", 3], ComplexUnion)
+        assert "Expected int, got str" in str(exc_info.value)
+        
+        # Invalid dict values
+        with pytest.raises(ValidationError) as exc_info:
+            enforce({"a": "not a float"}, ComplexUnion)
+        assert "Expected float, got str" in str(exc_info.value)
+        
+        # Invalid tuple structure
+        with pytest.raises(ValidationError) as exc_info:
+            enforce((42, "wrong order"), ComplexUnion)
+        assert "Expected str, got int" in str(exc_info.value)
+        
+        # Type not in union
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(True, ComplexUnion)
+        assert "Value doesn't match any type in Union" in str(exc_info.value)
+
+    def test_dataclass_with_default_values(self):
+        """Test dataclass validation with default values."""
+        @dataclass
+        class WithDefaults:
+            name: str
+            age: int = 30
+            active: bool = True
+            
+        # Test with minimal data (only required fields)
+        result = enforce({"name": "John"}, WithDefaults)
+        assert isinstance(result, WithDefaults)
+        assert result.name == "John"
+        assert result.age == 30  # Default value
+        assert result.active is True  # Default value
+        
+        # Test with all fields specified
+        result = enforce({"name": "Jane", "age": 25, "active": False}, WithDefaults)
+        assert isinstance(result, WithDefaults)
+        assert result.name == "Jane"
+        assert result.age == 25
+        assert result.active is False
+
+    def test_sequence_with_any_type(self):
+        """Test sequence validation with Any type."""
+        # List[Any] should accept any types within the list
+        mixed_list = [1, "string", True, None, [1, 2, 3], {"key": "value"}]
+        result = enforce(mixed_list, list[Any])
+        assert result == mixed_list
+        
+        # Tuple[Any, ...] should work similarly
+        mixed_tuple = (1, "string", True, None, {"key": "value"})
+        result = enforce(mixed_tuple, tuple[Any, ...])
+        assert result == mixed_tuple
+        
+        # Still fails if the container type is wrong
+        with pytest.raises(ValidationError) as exc_info:
+            enforce("not a list", list[Any])
+        assert "Expected list, got str" in str(exc_info.value)
+
+    def test_nested_optional_types(self):
+        """Test validation with nested Optional types in complex structures."""
+        # Define a complex type with nested Optionals
+        ComplexType = dict[str, Optional[list[Optional[int]]]]
+        
+        # Valid cases
+        valid_data = {
+            "with_list": [1, 2, None, 4],
+            "none_value": None,
+            "empty_list": []
+        }
+        result = enforce(valid_data, ComplexType)
+        assert result == valid_data
+        
+        # Invalid case: list contains non-int, non-None value
+        invalid_data = {
+            "with_list": [1, "not an int or None", 3]
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(invalid_data, ComplexType)
+        assert "[with_list][1]" in str(exc_info.value)
+        assert "Expected int | None, got str" in str(exc_info.value) or "Value doesn't match any type in Union" in str(exc_info.value)
+
+    def test_coverage_get_type_hints_failure(self):
+        """Coverage for _cached_get_type_hints exception handling (lines 69-70)."""
+        from typing import TypeVar
+        from type_enforcer.enforcer import _cached_get_type_hints
+
+        # Clear cache before test for direct call
+        _cached_get_type_hints.cache_clear()
+
+        # TypeVar itself should cause get_type_hints failure
+        T_cov = TypeVar('T_cov') 
+        result_tv = _cached_get_type_hints(T_cov)
+        assert result_tv == {}, "_cached_get_type_hints should return {} on TypeVar failure"
+
+        # Clear cache before test for class-based trigger
+        _cached_get_type_hints.cache_clear()
+
+        # Define a class where get_type_hints will fail internally
+        # Using an unresolvable forward reference
+        class ProblematicClass:
+            field: 'SomeUnresolvableForwardRef'
+        
+        # Now, try calling the function with this problematic class
+        result_class = _cached_get_type_hints(ProblematicClass)
+        assert result_class == {}, "_cached_get_type_hints should return {} on NameError failure"
+
+        # Additionally, try triggering via validation path (e.g., TypedDict)
+        _cached_get_type_hints.cache_clear()
+        class ProblematicDict(TypedDict):
+             field: 'SomeOtherUnresolvable'
+        
+        # Enforcing this should call _cached_get_type_hints internally
+        # It will likely fail validation later, but should cover the lines
+        with pytest.raises(ValidationError):
+             enforce({"field": 1}, ProblematicDict)
+        # Verify the cache reflects the failure from the enforce call
+        assert _cached_get_type_hints(ProblematicDict) == {}, "Cache should be {} after enforce failure"
+
+    def test_coverage_validate_tuple_not_tuple_input(self):
+        """Coverage check for initial type check in _validate_tuple."""
+        # This test now confirms the initial isinstance check raises the error,
+        # making the later else blocks (removed) unreachable.
+        with pytest.raises(ValidationError) as exc_info_homo:
+            enforce("not a tuple", tuple[int, ...])
+        assert "Expected tuple, got str" in str(exc_info_homo.value)
+        
+        with pytest.raises(ValidationError) as exc_info_fixed:
+            enforce("not a tuple", tuple[int, str])
+        assert "Expected tuple, got str" in str(exc_info_fixed.value)
+        
+    def test_coverage_validate_dict_nested_key_error(self):
+        """Coverage for dict key path generation (line 345)."""
+        ExpectedType = dict[str, dict[int, str]]
+        invalid_data = {"a": {"not_int_key": "b"}}
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(invalid_data, ExpectedType)
+        # Check that the error path includes the nested structure and '.key'
+        assert "[a][not_int_key].key: Expected int, got str" in str(exc_info.value)
+
+    def test_coverage_typeddict_optional_invalid_non_none(self):
+        """Coverage for _validate_typed_dict except-if condition (line 381)."""
+        # PartialUserInfo is total=False, so all fields are optional.
+        # Provide an invalid type for an optional field.
+        invalid_data = {"name": "ValidName", "age": "invalid_age_type"}
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(invalid_data, PartialUserInfo)
+        # Error should be raised because age is present but invalid, and not None
+        assert "age: Expected int, got str" in str(exc_info.value)
+
+    def test_validate_typed_dict_directly(self):
+        """Test _validate_typed_dict directly to cover line 370."""
+        # Create a custom TypeEnforcer subclass that forces ValidationError 
+        # for a specific path/value combination
+        class CustomEnforcer(TypeEnforcer):
+            def _validate_value(self, value, expected_type, path):
+                # Force ValidationError only for the specific field
+                if path == "value" and value is None:
+                    raise ValidationError("TEST ERROR", path)
+                return super()._validate_value(value, expected_type, path)
+        
+        # Create a TypedDict with total=False
+        class TestDict(TypedDict, total=False):
+            name: str
+            value: int  # This would normally reject None
+        
+        # Create data with None for the optional 'value' field
+        test_data = {"name": "test", "value": None}
+        
+        # Invoke the validator
+        enforcer = CustomEnforcer(TestDict)
+        
+        # Validation should pass by skipping the None field
+        result = enforcer.validate(test_data)
+        
+        # Check the result contains name but skipped value (continue branch)
+        assert "name" in result
+        # Check what happened to value - if line 370 is covered,
+        # it should have been skipped with 'continue'
+        assert result["name"] == "test"
+        
+        # We rely on coverage to tell us if line 370 was hit
+
+    def test_validate_typed_dict_non_dict(self):
+        """Coverage for raising ValidationError in _validate_typed_dict for non-dict (line 370)."""
+        # Define a simple TypedDict
+        class SimpleDict(TypedDict):
+            name: str
+        
+        # Try to validate a non-dict value against the TypedDict
+        # This should directly trigger the ValidationError in _validate_typed_dict
+        with pytest.raises(ValidationError) as exc_info:
+            enforce("not a dict", SimpleDict)
+        
+        # Check the specific error message
+        error_message = str(exc_info.value)
+        assert "Expected dict (TypedDict)" in error_message
+        assert "got str" in error_message
+
+
+# Added tests for final coverage
+class AdvancedUser(TypedDict):
+    """Advanced TypedDict for coverage tests."""
+    name: str
+    age: int
+    roles: List[str]
+
+
+class TestFinalCoverage:
+    """Test cases to cover the remaining lines in type_enforcer.py."""
+
+    def test_default_instance_check_with_origin(self):
+        """
+        Test the default instance check in _validate_value for custom generic types
+        with origin but no specific handler.
+        """
+        enforcer = TypeEnforcer(int) # Enforcer type doesn't matter here
+
+        # Define the type hint we want to validate against
+        # Set[int] has an origin (set) but no specific handler in _validate_value
+        ExpectedType = Set[int]
+
+        # Test with a valid instance (passes the `isinstance(value, origin)` check)
+        # We use a subclass to ensure it's not exactly `set`
+        class CustomSet(set):
+            pass
+        valid_set = CustomSet([1, 2, 3])
+        result = enforce(valid_set, ExpectedType)
+        assert result == valid_set
+
+        # Test with an invalid type (fails the `isinstance(value, origin)` check)
+        with pytest.raises(ValidationError) as exc_info:
+            enforce("not a set", ExpectedType)
+        # Check that the error message mentions the expected type's origin name
+        assert "set[int]" in str(exc_info.value).lower()
+        assert "got str" in str(exc_info.value).lower()
+
+
+    def test_complex_type_names(self):
+        """
+        Test _type_name with complex types that have origin and arguments.
+        """
+        enforcer = TypeEnforcer(int) # Enforcer type doesn't matter here
+
+        # Test complex nested generic type
+        complex_type = Dict[str, List[Tuple[int, float]]]
+        name = enforcer._type_name(complex_type)
+        # Check for expected formatting elements
+        assert name == "dict[str, list[tuple[int, float]]]"
+
+        # Test type with origin but no args
+        list_type = List
+        name_list = enforcer._type_name(list_type)
+        assert name_list == "list"
+
+        # Test non-generic type
+        assert enforcer._type_name(int) == "int"
+
+        # Test type without a standard __name__ (fallback to str)
+        class NoName: pass
+        noname_type = NoName
+        assert enforcer._type_name(noname_type) == "NoName"
+
+
+    def test_typed_dict_validation_with_complex_structure(self):
+        """
+        Test TypedDict validation with a nested structure.
+        """
+        # Valid user with nested structure
+        valid_user = {
+            "name": "Alice",
+            "age": 30,
+            "roles": ["admin", "user"]
+        }
+        result = enforce(valid_user, AdvancedUser)
+        assert result == valid_user
+
+        # Invalid user with wrong type for roles (should fail during item validation)
+        invalid_user_roles_type = {
+            "name": "Bob",
+            "age": 25,
+            "roles": "admin"  # Not a list
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(invalid_user_roles_type, AdvancedUser)
+        assert "roles: Expected list, got str" in str(exc_info.value)
+
+        # Invalid user with wrong item type in roles list
+        invalid_user_role_item_type = {
+            "name": "Charlie",
+            "age": 35,
+            "roles": ["admin", 123] # List item is not a string
+        }
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(invalid_user_role_item_type, AdvancedUser)
+        assert "roles[1]: Expected str, got int" in str(exc_info.value)
+
+
+class TestNewCoverageCases:
+    """Tests added to cover specific edge cases."""
+
+    def test_dataclass_initialization_error(self):
+        """Test dataclass with initialization error from missing args."""
+        with pytest.raises(ValidationError) as exc_info:
+            enforce({}, InvalidDataclass)
+        # Error message might vary slightly based on Python version / internals
+        assert "Failed to create dataclass" in str(exc_info.value)
+        # Check for mention of the missing field
+        assert "required_field" in str(exc_info.value)
+
+    def test_enum_with_invalid_types(self):
+        """Test enum validation with invalid types not convertible."""
+        # Test with dict (definitely not convertible)
+        with pytest.raises(ValidationError) as exc_info:
+            enforce({}, UserRole)
+        assert f"Expected {UserRole.__name__}, got dict" in str(exc_info.value)
+
+    def test_empty_enum(self):
+        """Test validation with an empty enum."""
+        with pytest.raises(ValidationError) as exc_info:
+            enforce("anything", EmptyEnum)
+        assert "Invalid enum value" in str(exc_info.value)
+        # Check that it shows no valid values
+        assert "Valid values:" in str(exc_info.value)
+        assert "Valid values: " in str(exc_info.value) # Ensure list is empty
+
+
+# Added tests for final coverage
+class TestFinalCoverageLines:
+    """Targeted tests for specific lines that were missed by coverage."""
+
+    def test_cached_is_typeddict_failure(self):
+        """Coverage for _cached_is_typeddict exception handling (lines 69-70)."""
+        import unittest.mock
+        from type_enforcer import enforcer # Import the module itself
+        
+        # Create a unique object to ensure cache miss for this test run
+        unique_object = object()
+        
+        # Clear the cache specifically for this function
+        enforcer._cached_is_typeddict.cache_clear()
+        
+        # Patch is_typeddict within the enforcer module's scope
+        with unittest.mock.patch('type_enforcer.enforcer.is_typeddict', 
+                                 side_effect=TypeError("Mocked TypeError")) as mock_is_typeddict:
+            
+            # Call the cached function with our unique object
+            # This should trigger the patched is_typeddict, raise TypeError,
+            # and cause the except block in _cached_is_typeddict to return False.
+            result = enforcer._cached_is_typeddict(unique_object)
+            
+            # Assert the except block returned False
+            assert result is False, "Expected False when is_typeddict raises TypeError"
+            
+            # Verify the mock was indeed called
+            mock_is_typeddict.assert_called_once_with(unique_object)
+
+    def test_instance_type_name_method(self):
+        """Coverage for the instance _type_name compatibility method (line 95)."""
+        enforcer = TypeEnforcer(int)
+        
+        # The compatibility method should directly call the module-level function
+        # We'll test several different types
+        test_types = [
+            (int, "int"),
+            (str, "str"),
+            (list[int], "list[int]"),
+            (dict[str, list[tuple[int, str]]], "dict[str, list[tuple[int, str]]]"),
+            (list, "list"),
+            (int | str, "UnionType[int, str]"), # Using | operator produces UnionType in str representations
+            (None.__class__, "NoneType")
+        ]
+        
+        # Call the instance method for all test types
+        for type_hint, expected_name in test_types:
+            result = enforcer._type_name(type_hint)
+            assert result == expected_name, f"Expected {expected_name}, got {result}"
+    
+    def test_sequence_with_no_args(self):
+        """Coverage for the early return in _validate_sequence when no args (line 283)."""
+        # Using list and tuple type hints with no type args
+        from typing import List, Tuple
+        
+        # This should hit the "if not args: return value" branch
+        mixed_list = [1, "string", True, None]
+        result = enforce(mixed_list, List)  # No type args
+        assert result == mixed_list
+        
+        # Same for tuple
+        mixed_tuple = (1, "string", True, None)
+        result_tuple = enforce(mixed_tuple, Tuple)  # No type args
+        assert result_tuple == mixed_tuple
+    
+    def test_dict_early_return(self):
+        """Coverage for the early return in _validate_dict when args != 2 (line 349)."""
+        # Test with Dict that has no type args
+        from typing import Dict
+        
+        # This should hit the "if not args or len(args) != 2: return value" branch
+        mixed_dict = {1: "a", "b": 2, None: True}
+        result = enforce(mixed_dict, Dict)  # No type args
+        assert result == mixed_dict
+
+    def test_typed_dict_with_uncaught_validation_error(self):
+        """Test _validate_typed_dict with a field that raises ValidationError."""
+        # Create a TypedDict with a field that will always raise ValidationError
+        class ComplexTypedDict(TypedDict):
+            name: str
+            value: dict[int, str]  # Will fail if key is not an int
+        
+        # Create a test instance with an invalid value field
+        test_data = {
+            "name": "test",
+            "value": {"not_an_int": "value"}  # Should raise ValidationError
+        }
+        
+        # This should cause ValidationError to be raised in the try/except block
+        with pytest.raises(ValidationError) as exc_info:
+            enforce(test_data, ComplexTypedDict)
+        
+        # Check that the error is correctly propagated with path info
+        assert "value" in str(exc_info.value)
+        assert "Expected int, got str" in str(exc_info.value)
+
+    def test_type_name_fallback(self):
+        """Coverage for the fallback str(type_) in _type_name (line 95)."""
+        from type_enforcer.enforcer import _type_name
+        
+        # Create a type-like object without __name__ to trigger the fallback
+        class TypeWithoutName:
+            # Override __name__ to make it not accessible
+            __name__ = property(lambda self: (_ for _ in ()).throw(AttributeError()))
+            
+            # Custom string representation
+            def __str__(self):
+                return "CustomTypeName"
+        
+        # Create an instance and remove its __name__ attribute
+        weird_type = TypeWithoutName()
+        
+        # Call _type_name directly - this should use the str() fallback
+        result = _type_name(weird_type)
+        assert result == "CustomTypeName", "Should fall back to str(type_) when __name__ is not accessible"

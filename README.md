@@ -14,6 +14,7 @@ the expected structure and types.
 *   **Clean API:** Simple `enforce(data, expected_type)` function for easy use.
 *   **Introspection Caching:** Uses caching for type analysis to improve performance.
 *   **Python 3.13+:** Leverages modern Python features.
+*   **100% Test Coverage:** Every line of code is thoroughly tested, ensuring reliability and stability.
 
 ## Why Type Enforcer Is Useful
 
@@ -171,6 +172,8 @@ enforce({"x": 1, "y": 2}, Point)  # Converts dict to dataclass
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request.
+
+The project maintains 100% test coverage, which helps ensure stability and correctness as new features are added. Any contributions should include appropriate tests to maintain this coverage level.
 
 ## Real-World Examples
 

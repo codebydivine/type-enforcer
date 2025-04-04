@@ -56,8 +56,8 @@ def _cached_get_type_hints(tp: type) -> dict:
     """Cached version of get_type_hints."""
     try:
         return get_type_hints(tp)
-    except (TypeError, ValueError):
-        # Handle cases where get_type_hints fails
+    except (TypeError, ValueError, NameError, AttributeError):
+        # Handle cases where get_type_hints fails (e.g., unresolvable forward refs)
         return {}
 
 
@@ -66,7 +66,8 @@ def _cached_is_typeddict(tp: type) -> bool:
     """Cached version of is_typeddict."""
     try:
         return is_typeddict(tp)
-    except TypeError:
+    except (TypeError, ValueError, NameError, AttributeError):
+        # Handle cases where get_type_hints fails (e.g., unresolvable forward refs)
         return False
 
 
@@ -319,11 +320,6 @@ class TypeEnforcer(Generic[T]):
                     result.append(validated_item_homog)
 
                 return tuple(result)
-            else:
-                # This case should ideally be caught earlier, but handle defensively
-                raise ValidationError(
-                    f"Expected tuple, got {type(value).__name__}", path
-                )
 
         # Handle fixed-length tuples like Tuple[int, str]
         if len(value) != len(args):
@@ -340,12 +336,6 @@ class TypeEnforcer(Generic[T]):
                 item_path = f"{path}[{i}]"
                 validated_item: Any = self._validate_value(item, arg_type, item_path)
                 result.append(validated_item)
-        else:
-            # This case should ideally be caught earlier, but handle defensively
-            raise ValidationError(
-                f"Expected tuple, got {type(value).__name__}", path
-            )
-
         return tuple(result)
 
     def _validate_dict(self, value: Any, expected_type: type, path: str) -> Any:
@@ -421,8 +411,11 @@ class TypeEnforcer(Generic[T]):
                     )
                     result[key] = validated_val
                 except ValidationError:
-                    # Only skip validation failures if the field is explicitly optional
-                    # And the value is None (which is handled elsewhere)
+                    # This condition seems unreachable: if value[key] is None and the field
+                    # is optional, _validate_value should handle it successfully without raising
+                    # the ValidationError needed to reach this except block.
+                    # if key in optional_keys and value[key] is None:
+                    #     continue 
                     if key in optional_keys and value[key] is None:
                         continue
                     raise  # Re-raise the exception for required fields or invalid types
