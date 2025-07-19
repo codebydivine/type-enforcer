@@ -5,6 +5,7 @@ This test suite verifies the functionality of the TypeEnforcer utility,
 which provides runtime type validation with detailed error reporting.
 """
 
+import unittest.mock
 from dataclasses import dataclass
 from enum import Enum
 from typing import (
@@ -916,8 +917,6 @@ class TestFinalCoverageLines:
 
     def test_cached_is_typeddict_failure(self):
         """Coverage for _cached_is_typeddict exception handling (lines 69-70)."""
-        import unittest.mock
-
         # Create a unique object to ensure cache miss for this test run
         unique_object = object()
 
