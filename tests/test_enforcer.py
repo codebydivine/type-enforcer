@@ -11,11 +11,13 @@ from typing import (
     Any,
     Literal,
     TypedDict,
+    TypeVar,
 )
 
 import pytest
 
-from type_enforcer import TypeEnforcer, ValidationError, enforce
+from type_enforcer import TypeEnforcer, ValidationError, enforce, enforcer
+from type_enforcer.enforcer import _cached_get_type_hints, _type_name
 
 
 # Define test types
@@ -666,9 +668,6 @@ class TestEdgeCasesAndCoverage:
 
     def test_coverage_get_type_hints_failure(self):
         """Coverage for _cached_get_type_hints exception handling (lines 69-70)."""
-        from typing import TypeVar
-
-        from type_enforcer.enforcer import _cached_get_type_hints
 
         # Clear cache before test for direct call
         _cached_get_type_hints.cache_clear()
@@ -919,8 +918,6 @@ class TestFinalCoverageLines:
         """Coverage for _cached_is_typeddict exception handling (lines 69-70)."""
         import unittest.mock
 
-        from type_enforcer import enforcer  # Import the module itself
-
         # Create a unique object to ensure cache miss for this test run
         unique_object = object()
 
@@ -1010,7 +1007,6 @@ class TestFinalCoverageLines:
 
     def test_type_name_fallback(self):
         """Coverage for the fallback str(type_) in _type_name (line 95)."""
-        from type_enforcer.enforcer import _type_name
 
         # Create a type-like object without __name__ to trigger the fallback
         class TypeWithoutName:
@@ -1030,9 +1026,6 @@ class TestFinalCoverageLines:
 
     def test_type_name_origin_without_args(self):
         """Test _type_name with origin that has no args (line 81)."""
-
-        from type_enforcer.enforcer import _type_name
-
         # typing.List has an origin (list) but no args when used bare
         result = _type_name(list)
         assert result == "list"
