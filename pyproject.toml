@@ -32,6 +32,8 @@ dev = [
     "pre-commit>=3.5.0",
     "ruff>=0.8.0",
     "mypy>=1.14.0",
+    "bandit[toml]>=1.7.5",
+    "safety>=3.0.0",
 ]
 
 [project.urls]
@@ -54,19 +56,70 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "S",    # flake8-bandit (security)
+    "A",    # flake8-builtins
+    "C90",  # mccabe complexity
+    "N",    # pep8-naming
+    "ANN",  # flake8-annotations
+    "BLE",  # flake8-blind-except
+    "EM",   # flake8-errmsg
+    "G",    # flake8-logging-format
+    "PIE",  # flake8-pie
+    "T20",  # flake8-print
+    "PT",   # flake8-pytest-style
+    "Q",    # flake8-quotes
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate
+    "PGH",  # pygrep-hooks
+    "PL",   # pylint
+    "TRY",  # tryceratops
+    "PERF", # perflint
+    "RUF",  # ruff-specific rules
 ]
 ignore = [
-    "E501",  # line too long, handled by ruff format
-    "B008",  # do not perform function calls in argument defaults
-    "C901",  # too complex
+    "E501",    # line too long, handled by ruff format
+    "B008",    # do not perform function calls in argument defaults
+    "C901",    # too complex
+    "ANN204",  # missing return type annotation for special method __init__
+    "ANN401",  # dynamically typed expressions (Any) are disallowed
+    "S101",    # use of assert detected
+    "PLR2004", # magic value used in comparison
+    "PLR0913", # too many arguments to function call
+    "PLR0911", # too many return statements
+    "PLR0912", # too many branches
+    "T201",    # print found
+    "EM101",   # exception must not use a string literal
+    "EM102",   # exception must not use an f-string literal
+    "TRY003",  # avoid specifying long messages outside exception class
+    "TRY301",  # abstract raise to an inner function
+    "ERA001",  # found commented-out code
 ]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101",    # allow asserts in tests
+    "ANN",     # don't require annotations in tests
+    "PLR2004", # allow magic values in tests
+    "S106",    # allow hardcoded passwords in tests
+    "ARG001",  # allow unused arguments in tests
+    "ARG005",  # allow unused lambda arguments in tests
+    "N806",    # allow non-lowercase variable names in tests
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
 
 [tool.ruff.format]
 quote-style = "double"
@@ -92,3 +145,7 @@ omit = [
 [tool.coverage.report]
 fail_under = 90 # Example: require 90% coverage
 show_missing = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips = ["B101"]  # Skip assert_used test
