@@ -14,17 +14,13 @@ from enum import Enum
 from functools import cache
 from typing import (
     Any,
-    Generic,
     Literal,
-    TypeVar,
     Union,
     get_args,
     get_origin,
     get_type_hints,
     is_typeddict,
 )
-
-T = TypeVar("T")
 
 
 # Cache type introspection functions at the module level for performance
@@ -105,7 +101,7 @@ class ValidationError(Exception):
         super().__init__(f"{path}: {message}" if path else message)
 
 
-class TypeEnforcer(Generic[T]):
+class TypeEnforcer[T]:
     """
     Validates and enforces types on data.
 
@@ -477,7 +473,7 @@ class TypeEnforcer(Generic[T]):
         return value
 
 
-def enforce(data: Any, expected_type: type[T]) -> T:
+def enforce[T](data: Any, expected_type: type[T]) -> T:
     """
     Enforce a type constraint on data.
 
