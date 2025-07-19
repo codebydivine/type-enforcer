@@ -3,7 +3,7 @@ Example usage of type-enforcer for validating complex API responses,
 such as one from the DexScreener API.
 """
 
-from typing import Any, Dict, List, Optional, TypedDict
+from typing import Any, TypedDict
 
 from type_enforcer import ValidationError, enforce
 
@@ -11,14 +11,17 @@ from type_enforcer import ValidationError, enforce
 # These TypedDicts define the expected structure and types of the API response.
 # Using TypedDict allows for precise validation of dictionary structures.
 
+
 class TokenDict(TypedDict):
     address: str
     name: str
     symbol: str
 
+
 class TransactionsDict(TypedDict, total=False):
     buys: int
     sells: int
+
 
 class TxnsPeriodsDict(TypedDict, total=False):
     m5: TransactionsDict
@@ -26,11 +29,13 @@ class TxnsPeriodsDict(TypedDict, total=False):
     h6: TransactionsDict
     h24: TransactionsDict
 
+
 class VolumeDict(TypedDict, total=False):
     h24: float
     h6: float
     h1: float
     m5: float
+
 
 class PriceChangeDict(TypedDict, total=False):
     m5: float
@@ -38,29 +43,35 @@ class PriceChangeDict(TypedDict, total=False):
     h6: float
     h24: float
 
+
 class LiquidityDict(TypedDict, total=False):
-    usd: Optional[float] # Field can be present but None
+    usd: float | None  # Field can be present but None
     base: float
     quote: float
+
 
 class WebsiteDict(TypedDict):
     label: str
     url: str
 
+
 class SocialDict(TypedDict, total=False):
     type: str
     url: str
-    label: Optional[str]
+    label: str | None
+
 
 class InfoDict(TypedDict, total=False):
-    imageUrl: Optional[str]
-    websites: Optional[List[WebsiteDict]]
-    socials: Optional[List[SocialDict]]
-    header: Optional[str]
-    openGraph: Optional[str]
+    imageUrl: str | None
+    websites: list[WebsiteDict] | None
+    socials: list[SocialDict] | None
+    header: str | None
+    openGraph: str | None
+
 
 class BoostsDict(TypedDict, total=False):
-    active: Optional[int]
+    active: int | None
+
 
 class PairDict(TypedDict, total=False):
     chainId: str
@@ -70,23 +81,25 @@ class PairDict(TypedDict, total=False):
     baseToken: TokenDict
     quoteToken: TokenDict
     priceNative: str
-    priceUsd: Optional[str]
+    priceUsd: str | None
     txns: TxnsPeriodsDict
     volume: VolumeDict
-    priceChange: Optional[PriceChangeDict]
-    liquidity: Optional[LiquidityDict]
-    fdv: Optional[float]
-    marketCap: Optional[float]
-    pairCreatedAt: Optional[int]
-    info: Optional[InfoDict]
-    boosts: Optional[BoostsDict]
-    labels: Optional[List[str]]
-    moonshot: Optional[Dict[str, Any]]
+    priceChange: PriceChangeDict | None
+    liquidity: LiquidityDict | None
+    fdv: float | None
+    marketCap: float | None
+    pairCreatedAt: int | None
+    info: InfoDict | None
+    boosts: BoostsDict | None
+    labels: list[str] | None
+    moonshot: dict[str, Any] | None
+
 
 class DexScreenerResponseDict(TypedDict):
     schemaVersion: str
-    pairs: Optional[List[PairDict]]
-    pair: Optional[PairDict]
+    pairs: list[PairDict] | None
+    pair: PairDict | None
+
 
 # ===== Example Usage =====
 
@@ -124,11 +137,11 @@ valid_api_response_data = {
             "info": {
                 "imageUrl": "https://example.com/token.png",
                 "websites": [{"label": "Homepage", "url": "https://example.com"}],
-                "socials": [{"type": "twitter", "url": "https://twitter.com/example"}]
-            }
+                "socials": [{"type": "twitter", "url": "https://twitter.com/example"}],
+            },
             # Missing optional fields are okay (e.g., marketCap, boosts, labels)
         }
-    ]
+    ],
     # Missing 'pair' is okay as it's optional
 }
 
@@ -153,7 +166,7 @@ invalid_api_response_data = {
             },
             "priceNative": "1500.5",
         }
-    ]
+    ],
 }
 
 print("Validating DexScreener API response structure...")
@@ -179,7 +192,7 @@ try:
     validated_data = enforce(invalid_api_response_data, DexScreenerResponseDict)
     print("ERROR: Invalid data was incorrectly validated!")
 except ValidationError as e:
-    print(f"SUCCESS: Correctly caught validation error in invalid data:")
+    print("SUCCESS: Correctly caught validation error in invalid data:")
     print(f"  {e}")
     # Example Error: pairs[0].baseToken.symbol: Expected str, got int
 
@@ -187,7 +200,7 @@ print("\n---")
 
 # Example: Validating a sub-structure (e.g., just the TokenDict)
 valid_token_data = {"address": "0x111...", "name": "Sub Token", "symbol": "SUB"}
-invalid_token_data = {"address": "0x222...", "name": 123, "symbol": "SUB"} # name is int
+invalid_token_data = {"address": "0x222...", "name": 123, "symbol": "SUB"}  # name is int
 
 print("Validating sub-structure (TokenDict)...")
 try:
@@ -200,6 +213,6 @@ try:
     enforce(invalid_token_data, TokenDict)
     print("ERROR: Invalid token was incorrectly validated!")
 except ValidationError as e:
-    print(f"SUCCESS: Correctly caught validation error in invalid token:")
+    print("SUCCESS: Correctly caught validation error in invalid token:")
     print(f"  {e}")
-    # Example Error: name: Expected str, got int 
+    # Example Error: name: Expected str, got int

@@ -91,4 +91,4 @@ omit = [
 
 [tool.coverage.report]
 fail_under = 90 # Example: require 90% coverage
-show_missing = true 
+show_missing = true

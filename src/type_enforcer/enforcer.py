@@ -46,7 +46,7 @@ def _cached_is_optional(type_hint: type) -> bool:
     origin = get_origin(type_hint)
     args = get_args(type_hint)
     return (
-        (origin is Union or origin is types.UnionType) # Check both Union and | syntax
+        (origin is Union or origin is types.UnionType)  # Check both Union and | syntax
         and type(None) in args
     )
 
@@ -157,9 +157,7 @@ class TypeEnforcer(Generic[T]):
         if expected_type is type(None):
             if value is None:
                 return None
-            raise ValidationError(
-                f"Expected NoneType, got {type(value).__name__}", path
-            )
+            raise ValidationError(f"Expected NoneType, got {type(value).__name__}", path)
 
         # Get the origin type (like list, dict, etc.) using cached function
         origin = _cached_get_origin(expected_type)
@@ -172,9 +170,7 @@ class TypeEnforcer(Generic[T]):
         if value is None:
             if _cached_is_optional(expected_type):
                 return None
-            raise ValidationError(
-                f"Expected {_type_name(expected_type)}, got None", path
-            )
+            raise ValidationError(f"Expected {_type_name(expected_type)}, got None", path)
 
         # Handle TypedDict (must happen before primitive check)
         if _cached_is_typeddict(expected_type):
@@ -229,9 +225,7 @@ class TypeEnforcer(Generic[T]):
 
         # Basic isinstance check for primitive types
         if not isinstance(value, expected_type):
-            raise ValidationError(
-                f"Expected {expected_type.__name__}, got {type(value).__name__}", path
-            )
+            raise ValidationError(f"Expected {expected_type.__name__}, got {type(value).__name__}", path)
 
         return value
 
@@ -245,12 +239,11 @@ class TypeEnforcer(Generic[T]):
         bool_in_union = bool in args
 
         if is_bool and not bool_in_union:
-             # Explicitly reject bool if it's not part of the Union
-             types_str = ' | '.join(str(t) for t in args)
-             raise ValidationError(
-                f"Value doesn't match any type in Union. Got bool, expected one of: {types_str}",
-                path
-             )
+            # Explicitly reject bool if it's not part of the Union
+            types_str = " | ".join(str(t) for t in args)
+            raise ValidationError(
+                f"Value doesn't match any type in Union. Got bool, expected one of: {types_str}", path
+            )
 
         for arg_type in args:
             try:
@@ -260,22 +253,15 @@ class TypeEnforcer(Generic[T]):
 
         # If we get here, nothing matched
         # The specific bool case is handled above, so this is for other mismatches
-        types_str = ' | '.join(str(t) for t in args)
-        errors_str = '; '.join(errors)
-        error_msg = (
-            f"Value doesn't match any type in Union: {types_str}\n"
-            f"Validation errors: {errors_str}"
-        )
+        types_str = " | ".join(str(t) for t in args)
+        errors_str = "; ".join(errors)
+        error_msg = f"Value doesn't match any type in Union: {types_str}\nValidation errors: {errors_str}"
         raise ValidationError(error_msg, path)
 
-    def _validate_sequence(
-        self, value: Any, expected_type: type, path: str, container_type: type = list
-    ) -> Any:
+    def _validate_sequence(self, value: Any, expected_type: type, path: str, container_type: type = list) -> Any:
         """Validates sequence types (list/tuple)."""
         if not isinstance(value, container_type):
-            raise ValidationError(
-                f"Expected {container_type.__name__}, got {type(value).__name__}", path
-            )
+            raise ValidationError(f"Expected {container_type.__name__}, got {type(value).__name__}", path)
 
         args = _cached_get_args(expected_type)
 
@@ -287,7 +273,7 @@ class TypeEnforcer(Generic[T]):
         item_type = args[0]
         result = []
 
-        for i, item in enumerate(value):
+        for i, item in enumerate(value):  # type: ignore[var-annotated,arg-type]
             item_path = f"{path}[{i}]"
             validated_item = self._validate_value(item, item_type, item_path)
             result.append(validated_item)
@@ -314,7 +300,7 @@ class TypeEnforcer(Generic[T]):
             if isinstance(value, tuple):
                 # Explicitly cast for mypy - removed, use ignore instead
                 # value_tuple: tuple = value
-                for i, item in enumerate(value): # type: ignore[arg-type, var-annotated]
+                for i, item in enumerate(value):  # type: ignore[arg-type, var-annotated]
                     item_path = f"{path}[{i}]"
                     validated_item_homog = self._validate_value(item, item_type, item_path)
                     result.append(validated_item_homog)
@@ -323,15 +309,13 @@ class TypeEnforcer(Generic[T]):
 
         # Handle fixed-length tuples like Tuple[int, str]
         if len(value) != len(args):
-            raise ValidationError(
-                f"Expected tuple of length {len(args)}, got length {len(value)}", path
-            )
+            raise ValidationError(f"Expected tuple of length {len(args)}, got length {len(value)}", path)
 
         result = []
         # Ensure value is a tuple before iterating
         if isinstance(value, tuple):
-             # Explicitly cast for mypy
-            value_tuple_fixed: tuple = value # Renamed variable
+            # Explicitly cast for mypy
+            value_tuple_fixed: tuple = value  # Renamed variable
             for i, (item, arg_type) in enumerate(zip(value_tuple_fixed, args, strict=False)):
                 item_path = f"{path}[{i}]"
                 validated_item: Any = self._validate_value(item, arg_type, item_path)
@@ -368,9 +352,7 @@ class TypeEnforcer(Generic[T]):
     def _validate_typed_dict(self, value: Any, expected_type: type, path: str) -> Any:
         """Validates TypedDict instances."""
         if not isinstance(value, dict):
-            raise ValidationError(
-                f"Expected dict (TypedDict), got {type(value).__name__}", path
-            )
+            raise ValidationError(f"Expected dict (TypedDict), got {type(value).__name__}", path)
 
         # Get type hints for the TypedDict using cached function
         hints = _cached_get_type_hints(expected_type)
@@ -397,25 +379,21 @@ class TypeEnforcer(Generic[T]):
         # Check for missing required keys
         missing_keys = required_keys - value.keys()
         if missing_keys:
-            raise ValidationError(
-                f"Missing required keys: {', '.join(sorted(missing_keys))}", path
-            )
+            raise ValidationError(f"Missing required keys: {', '.join(sorted(missing_keys))}", path)
 
         # Validate each field
         for key, field_type in hints.items():
             if key in value:
                 field_path = f"{path}.{key}" if path else key
                 try:
-                    validated_val = self._validate_value(
-                        value[key], field_type, field_path
-                    )
+                    validated_val = self._validate_value(value[key], field_type, field_path)
                     result[key] = validated_val
                 except ValidationError:
                     # This condition seems unreachable: if value[key] is None and the field
                     # is optional, _validate_value should handle it successfully without raising
                     # the ValidationError needed to reach this except block.
                     # if key in optional_keys and value[key] is None:
-                    #     continue 
+                    #     continue
                     if key in optional_keys and value[key] is None:
                         continue
                     raise  # Re-raise the exception for required fields or invalid types
@@ -423,9 +401,7 @@ class TypeEnforcer(Generic[T]):
         # Check for unknown keys - always raise error for unknown keys (strict mode)
         unknown_keys = value.keys() - hints.keys()
         if unknown_keys:
-            raise ValidationError(
-                f"Unknown keys found: {', '.join(sorted(unknown_keys))}", path
-            )
+            raise ValidationError(f"Unknown keys found: {', '.join(sorted(unknown_keys))}", path)
 
         return result
 
@@ -440,23 +416,17 @@ class TypeEnforcer(Generic[T]):
             for field_name, field_type in field_types.items():
                 if field_name in value:
                     field_path = f"{path}.{field_name}" if path else field_name
-                    validated_data[field_name] = self._validate_value(
-                        value[field_name], field_type, field_path
-                    )
+                    validated_data[field_name] = self._validate_value(value[field_name], field_type, field_path)
 
             # Create instance using validated data
             try:
                 return expected_type(**validated_data)
             except TypeError as e:
-                raise ValidationError(
-                    f"Failed to create dataclass: {str(e)}", path
-                ) from e
+                raise ValidationError(f"Failed to create dataclass: {str(e)}", path) from e
 
         # If it's already an instance, validate fields
         if not isinstance(value, expected_type):
-            raise ValidationError(
-                f"Expected {expected_type.__name__}, got {type(value).__name__}", path
-            )
+            raise ValidationError(f"Expected {expected_type.__name__}, got {type(value).__name__}", path)
 
         return value
 
@@ -470,10 +440,7 @@ class TypeEnforcer(Generic[T]):
         # would incorrectly accept booleans)
         if isinstance(value, bool):
             valid_values = [e.name for e in expected_type]
-            error_msg = (
-                f"Expected {expected_type.__name__}, got bool. "
-                f"Valid values: {', '.join(valid_values)}"
-            )
+            error_msg = f"Expected {expected_type.__name__}, got bool. Valid values: {', '.join(valid_values)}"
             raise ValidationError(error_msg, path)
 
         # Try to convert a string/int to enum value
@@ -487,14 +454,10 @@ class TypeEnforcer(Generic[T]):
                 raise IndexError(f"Enum index {value} out of range")
         except (KeyError, IndexError):
             valid_values = [e.name for e in expected_type]
-            raise ValidationError(
-                f"Invalid enum value. Valid values: {', '.join(valid_values)}", path
-            ) from None
+            raise ValidationError(f"Invalid enum value. Valid values: {', '.join(valid_values)}", path) from None
 
         # If it's not a string or int, it's definitely invalid
-        raise ValidationError(
-            f"Expected {expected_type.__name__}, got {type(value).__name__}", path
-        )
+        raise ValidationError(f"Expected {expected_type.__name__}, got {type(value).__name__}", path)
 
     def _validate_literal(self, value: Any, expected_type: type, path: str) -> Any:
         """Validates Literal types."""

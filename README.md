@@ -2,8 +2,8 @@
 
 A runtime type validation utility for Python 3.13+ with detailed error reporting.
 
-This module provides a clean, efficient way to enforce type constraints on data, 
-ensuring that your function inputs, API responses, or configuration files match 
+This module provides a clean, efficient way to enforce type constraints on data,
+ensuring that your function inputs, API responses, or configuration files match
 the expected structure and types.
 
 ## Features
