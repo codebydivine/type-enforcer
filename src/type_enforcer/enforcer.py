@@ -418,7 +418,7 @@ class TypeEnforcer[T]:
             try:
                 return expected_type(**validated_data)
             except TypeError as e:
-                raise ValidationError(f"Failed to create dataclass: {str(e)}", path) from e
+                raise ValidationError(f"Failed to create dataclass: {e!s}", path) from e
 
         # If it's already an instance, validate fields
         if not isinstance(value, expected_type):
@@ -443,7 +443,7 @@ class TypeEnforcer[T]:
         try:
             if isinstance(value, str):
                 return expected_type[value]
-            elif isinstance(value, int):
+            if isinstance(value, int):
                 enum_values = list(expected_type)
                 if 0 <= value < len(enum_values):
                     return enum_values[value]
@@ -466,7 +466,7 @@ class TypeEnforcer[T]:
         if value not in allowed_values:
             formatted_values = [repr(v) for v in allowed_values]
             raise ValidationError(
-                f"Expected one of: {', '.join(formatted_values)}, got: {repr(value)}",
+                f"Expected one of: {', '.join(formatted_values)}, got: {value!r}",
                 path,
             )
 
