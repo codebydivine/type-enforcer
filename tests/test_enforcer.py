@@ -1027,3 +1027,34 @@ class TestFinalCoverageLines:
         # Call _type_name directly - this should use the str() fallback
         result = _type_name(weird_type)
         assert result == "CustomTypeName", "Should fall back to str(type_) when __name__ is not accessible"
+
+    def test_type_name_origin_without_args(self):
+        """Test _type_name with origin that has no args (line 81)."""
+
+        from type_enforcer.enforcer import _type_name
+
+        # typing.List has an origin (list) but no args when used bare
+        result = _type_name(list)
+        assert result == "list"
+
+    def test_sequence_validation_early_return(self):
+        """Test sequence validation with no type args (line 266)."""
+
+        # Test with bare List type (has origin but no type args)
+        # This should hit the _validate_sequence method with no args
+        result = enforce([1, 2, "hello"], list)
+        assert result == [1, 2, "hello"]
+
+    def test_tuple_validation_early_return(self):
+        """Test tuple validation with no type args (line 288)."""
+
+        # Test with bare Tuple type (has origin but no type args)
+        result = enforce((1, 2, "hello"), tuple)
+        assert result == (1, 2, "hello")
+
+    def test_dict_validation_early_return(self):
+        """Test dict validation with no type args or wrong arg count (line 330)."""
+
+        # Test with bare Dict type (has origin but no type args)
+        result = enforce({"a": 1, "b": "hello"}, dict)
+        assert result == {"a": 1, "b": "hello"}
