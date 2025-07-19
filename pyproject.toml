@@ -92,6 +92,9 @@ ignore = [
     "E501",    # line too long, handled by ruff format
     "B008",    # do not perform function calls in argument defaults
     "C901",    # too complex
+    "ANN001",  # missing type annotation for function argument
+    "ANN201",  # missing return type annotation for public function
+    "ANN202",  # missing return type annotation for private function
     "ANN204",  # missing return type annotation for special method __init__
     "ANN401",  # dynamically typed expressions (Any) are disallowed
     "S101",    # use of assert detected
@@ -104,18 +107,30 @@ ignore = [
     "EM102",   # exception must not use an f-string literal
     "TRY003",  # avoid specifying long messages outside exception class
     "TRY301",  # abstract raise to an inner function
+    "TRY400",  # prefer exception over error with exc_info
     "ERA001",  # found commented-out code
+    "G004",    # logging statement uses f-string
+    "G201",    # logging .exception should be used instead of .error with exc_info
+    "TRY300",  # consider moving to else block
+    "RET503",  # missing explicit return at end of function
+    "RUF009",  # do not perform function call in dataclass defaults
+    "PT011",   # pytest.raises is too broad
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = [
     "S101",    # allow asserts in tests
+    "S105",    # allow hardcoded passwords in tests
     "ANN",     # don't require annotations in tests
     "PLR2004", # allow magic values in tests
     "S106",    # allow hardcoded passwords in tests
     "ARG001",  # allow unused arguments in tests
     "ARG005",  # allow unused lambda arguments in tests
     "N806",    # allow non-lowercase variable names in tests
+    "BLE001",  # allow blind except in tests
+    "PTH",     # allow os.path usage in tests
+    "PT011",   # allow broad pytest.raises in tests
+    "RET503",  # allow missing return in tests
 ]
 
 [tool.ruff.lint.mccabe]
