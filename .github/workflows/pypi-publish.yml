@@ -10,7 +10,10 @@ jobs:
   # Run CI tests first to ensure quality
   test:
     uses: ./.github/workflows/ci.yml
-    secrets: inherit
+    secrets: inherit  # pragma: allowlist secret
+    permissions:
+      contents: read
+      security-events: write
 
   build:
     name: Build distribution
@@ -44,7 +47,6 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/divine-type-enforcer
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
 

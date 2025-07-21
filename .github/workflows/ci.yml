@@ -33,7 +33,7 @@ jobs:
         run: poetry install --no-interaction --with dev --no-root
 
       - name: Run tests with pytest
-        run: poetry run pytest -v --cov=type_enforcer --cov-report=term-missing --cov-report=xml --cov-report=html
+        run: poetry run pytest -v --cov-report=term-missing --cov-report=xml --cov-report=html
         shell: bash
 
       - name: Upload coverage to Codecov
@@ -81,7 +81,7 @@ jobs:
         run: poetry run ruff format --check .
 
       - name: Run mypy
-        run: poetry run mypy src/type_enforcer --ignore-missing-imports
+        run: poetry run mypy src/ --ignore-missing-imports
 
       - name: Run bandit security scan
         run: poetry run bandit -r src/ -f txt
