@@ -70,9 +70,10 @@ jobs:
         run: |
           poetry install --no-interaction --with dev --no-root
 
-      - name: Run Safety check
-        run: |
-          poetry run safety scan --output json --save-as safety-results.json || true
+      - name: Run Safety to check for vulnerabilities
+        uses: pyupio/safety-action@v1
+        with:
+          api-key: ${{ secrets.SAFETY_API_KEY }}
 
       - name: Run Bandit security scan
         run: |

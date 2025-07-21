@@ -86,8 +86,10 @@ jobs:
       - name: Run bandit security scan
         run: poetry run bandit -r src/ -f txt
 
-      - name: Run safety dependency check
-        run: poetry run safety scan
+      - name: Run Safety to check for vulnerabilities
+        uses: pyupio/safety-action@v1
+        with:
+          api-key: ${{ secrets.SAFETY_API_KEY }}
 
   build:
     runs-on: ubuntu-latest
