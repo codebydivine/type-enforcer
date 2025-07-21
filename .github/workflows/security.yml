@@ -72,7 +72,7 @@ jobs:
 
       - name: Run Safety check
         run: |
-          poetry run safety check --json --output safety-results.json || true
+          poetry run safety scan --output json --save-as safety-results.json || true
 
       - name: Run Bandit security scan
         run: |
