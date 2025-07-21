@@ -1,26 +1,22 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[project]
+[tool.poetry]
 name = "divine-type-enforcer"
 version = "0.1.10"
-authors = [
-  { name = "DIVINE", email = "admin@divine.sh" },
-]
 description = "A runtime type validation utility with detailed error reporting."
+authors = ["DIVINE <admin@divine.sh>"]
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.13"
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.13",
-  "Operating System :: OS Independent",
-  "Development Status :: 4 - Beta",
-  "Intended Audience :: Developers",
-  "Topic :: Software Development :: Libraries :: Python Modules",
-  "Typing :: Typed",
-]
+packages = [{include = "type_enforcer", from = "src"}]
+
+[tool.poetry.urls]
+Homepage = "https://github.com/divinescreener/type-enforcer"
+Issues = "https://github.com/divinescreener/type-enforcer/issues"
+
+[tool.poetry.dependencies]
+python = ">=3.13"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
@@ -31,13 +27,6 @@ pre-commit = "^4.2.0"
 ruff = "^0.12.4"
 mypy = "^1.17.0"
 bandit = { extras = ["toml"], version = "^1.8.6" }
-
-[project.urls]
-Homepage = "https://github.com/divinescreener/type-enforcer"
-Issues   = "https://github.com/divinescreener/type-enforcer/issues"
-
-[tool.setuptools.packages.find]
-where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath   = ["src"]
