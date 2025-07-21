@@ -1,13 +1,53 @@
-repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.4
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
+# DIVINE Standardized Pre-commit Configuration
+# Uses Poetry for all Python tools to ensure consistent environments
+# across development, pre-commit hooks, and CI/CD pipelines
+#
+# To apply to a repository:
+# 1. Copy this file to .pre-commit-config.yaml in the repo root
+# 2. Run: pre-commit install --overwrite
+# 3. Test: pre-commit run --all-files
 
+repos:
+  - repo: local
+    hooks:
+      # Ruff linting with auto-fix
+      - id: ruff-check
+        name: ruff-check
+        entry: poetry run ruff check --fix
+        language: system
+        types: [python]
+        require_serial: false
+
+      # Ruff formatting
+      - id: ruff-format
+        name: ruff-format
+        entry: poetry run ruff format
+        language: system
+        types: [python]
+        require_serial: false
+
+      # MyPy type checking
+      - id: mypy
+        name: mypy
+        entry: poetry run mypy
+        language: system
+        types: [python]
+        files: ^src/
+        args: [--ignore-missing-imports]
+        require_serial: false
+
+      # Bandit security scanning
+      - id: bandit
+        name: bandit
+        entry: poetry run bandit
+        language: system
+        types: [python]
+        args: ["-c", "pyproject.toml"]
+        require_serial: false
+
+  # Standard file checks (these don't need Poetry)
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: 582b9c66e0791980685c8b80bb11e6a3df1a06ef  # pragma: allowlist secret
+    rev: v4.6.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -18,22 +58,9 @@ repos:
       - id: check-merge-conflict
       - id: debug-statements
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.17.0
-    hooks:
-      - id: mypy
-        files: ^src/
-        args: [--ignore-missing-imports]
-
-  - repo: https://github.com/PyCQA/bandit
-    rev: 5a820865d7041564c0d7c576840dc272835dfa0d  # pragma: allowlist secret
-    hooks:
-      - id: bandit
-        args: ["-c", "pyproject.toml"]
-        additional_dependencies: ["bandit[toml]"]
-
+  # Secret detection
   - repo: https://github.com/Yelp/detect-secrets
-    rev: 50119d658ab48021cad234fc5c8d3253263b2ec0  # pragma: allowlist secret
+    rev: v1.5.0
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
