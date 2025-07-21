@@ -6,52 +6,50 @@ build-backend = "setuptools.build_meta"
 name = "divine-type-enforcer"
 version = "0.1.8"
 authors = [
-  { name="DIVINE", email="admin@divine.sh" },
+  { name = "DIVINE", email = "admin@divine.sh" },
 ]
 description = "A runtime type validation utility with detailed error reporting."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.13"
 classifiers = [
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.13",
-    "Operating System :: OS Independent",
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-    "Typing :: Typed",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+  "Typing :: Typed",
 ]
 
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0",
-    "pytest-cov>=4.0",
-    "pytest-asyncio>=0.21",
-    "python-dotenv>=1.0.0",
-    "pre-commit>=3.5.0",
-    "ruff>=0.8.0",
-    "mypy>=1.14.0",
-    "bandit[toml]>=1.7.5",
-    "safety>=3.0.0",
-]
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+pytest-cov = "^6.2.1"
+pytest-asyncio = "^1.1.0"
+python-dotenv = "^1.1.1"
+pre-commit = "^4.2.0"
+ruff = "^0.12.4"
+mypy = "^1.17.0"
+bandit = { extras = ["toml"], version = "^1.8.6" }
+safety = "^3.6.0"
 
 [project.urls]
-Homepage = "https://github.com/codebydivine/type-enforcer"
-Issues = "https://github.com/codebydivine/type-enforcer/issues"
+Homepage = "https://github.com/divinescreener/type-enforcer"
+Issues   = "https://github.com/divinescreener/type-enforcer/issues"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
-pythonpath = ["src"]
-testpaths = ["tests"]
-addopts = "--cov=type_enforcer --cov-report term-missing"
+pythonpath   = ["src"]
+testpaths    = ["tests"]
+addopts      = "--cov=type_enforcer --cov-report term-missing"
 asyncio_mode = "auto"
 
 [tool.ruff]
 target-version = "py313"
-line-length = 120
-src = ["src", "tests"]
+line-length    = 120
+src            = ["src", "tests"]
 
 [tool.ruff.lint]
 select = [
@@ -136,30 +134,28 @@ ignore = [
 max-complexity = 10
 
 [tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
+quote-style               = "double"
+indent-style              = "space"
 skip-magic-trailing-comma = false
-line-ending = "auto"
+line-ending               = "auto"
 
 [tool.mypy]
-python_version = "3.13"
-warn_unused_configs = true
-ignore_missing_imports = true # Optional: adjust as needed
+python_version         = "3.13"
+warn_unused_configs    = true
+ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = "tests.*"
+module                = "tests.*"
 disallow_untyped_defs = false
 
 [tool.coverage.run]
 source = ["src/type_enforcer"]
-omit = [
-    "src/type_enforcer/__init__.py", # Typically excluded
-]
+omit   = ["src/type_enforcer/__init__.py"]
 
 [tool.coverage.report]
-fail_under = 90 # Example: require 90% coverage
+fail_under   = 90
 show_missing = true
 
 [tool.bandit]
 exclude_dirs = ["tests"]
-skips = ["B101"]  # Skip assert_used test
+skips        = ["B101"]
