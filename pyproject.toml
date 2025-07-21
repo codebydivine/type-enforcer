@@ -31,7 +31,6 @@ pre-commit = "^4.2.0"
 ruff = "^0.12.4"
 mypy = "^1.17.0"
 bandit = { extras = ["toml"], version = "^1.8.6" }
-safety = "^3.6.0"
 
 [project.urls]
 Homepage = "https://github.com/divinescreener/type-enforcer"
