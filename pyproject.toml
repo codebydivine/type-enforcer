@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "divine-type-enforcer"
-version = "0.1.10"
+version = "0.1.11"
 description = "A runtime type validation utility with detailed error reporting."
 authors = ["DIVINE <admin@divine.sh>"]
 readme = "README.md"
