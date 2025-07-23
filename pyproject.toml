@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "divine-type-enforcer"
-version = "0.1.11"
+version = "0.1.12"
 description = "A runtime type validation utility with detailed error reporting."
 authors = [{name = "DIVINE", email = "admin@divine.sh"}]
 readme = "README.md"
