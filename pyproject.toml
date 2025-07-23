@@ -1,0 +1,152 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "divine-type-enforcer"
+version = "0.1.11"
+description = "A runtime type validation utility with detailed error reporting."
+authors = [{name = "DIVINE", email = "admin@divine.sh"}]
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.13"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/divinescreener/type-enforcer"
+Issues = "https://github.com/divinescreener/type-enforcer/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/type_enforcer"]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.4.1",
+    "pytest-cov>=6.2.1",
+    "pytest-asyncio>=1.1.0",
+    "python-dotenv>=1.1.1",
+    "pre-commit>=4.2.0",
+    "ruff>=0.12.4",
+    "mypy>=1.17.0",
+    "bandit[toml]>=1.8.6",
+]
+
+[tool.pytest.ini_options]
+pythonpath   = ["src"]
+testpaths    = ["tests"]
+addopts      = "--cov=type_enforcer --cov-report term-missing"
+asyncio_mode = "auto"
+
+[tool.ruff]
+target-version = "py313"
+line-length    = 120
+src            = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "S",    # flake8-bandit (security)
+    "A",    # flake8-builtins
+    "C90",  # mccabe complexity
+    "N",    # pep8-naming
+    "ANN",  # flake8-annotations
+    "BLE",  # flake8-blind-except
+    "EM",   # flake8-errmsg
+    "G",    # flake8-logging-format
+    "PIE",  # flake8-pie
+    "T20",  # flake8-print
+    "PT",   # flake8-pytest-style
+    "Q",    # flake8-quotes
+    "RSE",  # flake8-raise
+    "RET",  # flake8-return
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "ARG",  # flake8-unused-arguments
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate
+    "PGH",  # pygrep-hooks
+    "PL",   # pylint
+    "TRY",  # tryceratops
+    "PERF", # perflint
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "E501",    # line too long, handled by ruff format
+    "B008",    # do not perform function calls in argument defaults
+    "C901",    # too complex
+    "ANN001",  # missing type annotation for function argument
+    "ANN201",  # missing return type annotation for public function
+    "ANN202",  # missing return type annotation for private function
+    "ANN204",  # missing return type annotation for special method __init__
+    "ANN401",  # dynamically typed expressions (Any) are disallowed
+    "S101",    # use of assert detected
+    "PLR2004", # magic value used in comparison
+    "PLR0913", # too many arguments to function call
+    "PLR0911", # too many return statements
+    "PLR0912", # too many branches
+    "T201",    # print found
+    "EM101",   # exception must not use a string literal
+    "EM102",   # exception must not use an f-string literal
+    "TRY003",  # avoid specifying long messages outside exception class
+    "TRY301",  # abstract raise to an inner function
+    "TRY400",  # prefer exception over error with exc_info
+    "ERA001",  # found commented-out code
+    "G004",    # logging statement uses f-string
+    "G201",    # logging .exception should be used instead of .error with exc_info
+    "TRY300",  # consider moving to else block
+    "RET503",  # missing explicit return at end of function
+    "RUF009",  # do not perform function call in dataclass defaults
+    "PT011",   # pytest.raises is too broad
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "S101",    # allow asserts in tests
+    "S105",    # allow hardcoded passwords in tests
+    "ANN",     # don't require annotations in tests
+    "PLR2004", # allow magic values in tests
+    "S106",    # allow hardcoded passwords in tests
+    "ARG001",  # allow unused arguments in tests
+    "ARG005",  # allow unused lambda arguments in tests
+    "N806",    # allow non-lowercase variable names in tests
+    "BLE001",  # allow blind except in tests
+    "PTH",     # allow os.path usage in tests
+    "PT011",   # allow broad pytest.raises in tests
+    "RET503",  # allow missing return in tests
+]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+quote-style               = "double"
+indent-style              = "space"
+skip-magic-trailing-comma = false
+line-ending               = "auto"
+
+[tool.mypy]
+python_version         = "3.13"
+warn_unused_configs    = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module                = "tests.*"
+disallow_untyped_defs = false
+
+[tool.coverage.run]
+source = ["src/type_enforcer"]
+omit   = ["src/type_enforcer/__init__.py"]
+
+[tool.coverage.report]
+fail_under   = 90
+show_missing = true
+
+[tool.bandit]
+exclude_dirs = ["tests"]
+skips        = ["B101"]

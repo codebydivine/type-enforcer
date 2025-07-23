@@ -1,0 +1,67 @@
+# DIVINE Standardized Pre-commit Configuration
+# Uses UV for all Python tools to ensure consistent environments
+# across development, pre-commit hooks, and CI/CD pipelines
+#
+# To apply to a repository:
+# 1. Copy this file to .pre-commit-config.yaml in the repo root
+# 2. Run: pre-commit install --overwrite
+# 3. Test: pre-commit run --all-files
+
+repos:
+  - repo: local
+    hooks:
+      # Ruff linting with auto-fix
+      - id: ruff-check
+        name: ruff-check
+        entry: uv run ruff check --fix
+        language: system
+        types: [python]
+        require_serial: false
+
+      # Ruff formatting
+      - id: ruff-format
+        name: ruff-format
+        entry: uv run ruff format
+        language: system
+        types: [python]
+        require_serial: false
+
+      # MyPy type checking
+      - id: mypy
+        name: mypy
+        entry: uv run mypy
+        language: system
+        types: [python]
+        files: ^src/
+        args: [--ignore-missing-imports]
+        require_serial: false
+
+      # Bandit security scanning
+      - id: bandit
+        name: bandit
+        entry: uv run bandit
+        language: system
+        types: [python]
+        args: ["-c", "pyproject.toml"]
+        require_serial: false
+
+  # Standard file checks (these don't need UV)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+      - id: check-json
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # Secret detection (disabled - false positives in documentation)
+  # - repo: https://github.com/Yelp/detect-secrets
+  #   rev: v1.5.0
+  #   hooks:
+  #     - id: detect-secrets
+  #       args: ['--baseline', '.secrets.baseline']
+  #       exclude: package.lock.json

@@ -1,0 +1,26 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    paths:
+      - 'pyproject.toml'
+      - 'requirements*.txt'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          allow-licenses: MIT, Apache-2.0, BSD-3-Clause, BSD-2-Clause, ISC, Python-2.0
+          comment-summary-in-pr: true
