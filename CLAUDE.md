@@ -255,6 +255,16 @@ uv run python3 -m module   # Run module
 - **Linter**: ruff (not flake8/black)
 - **Type Checker**: mypy with strict mode
 
+## 🚀 Development Philosophy
+
+### **No Backward Compatibility Constraints**
+- **Break freely**: When improving APIs, types, or interfaces, prioritize clean design over backward compatibility
+- **Refactor boldly**: Don't hesitate to restructure code for better maintainability, performance, or clarity
+- **Evolve rapidly**: Focus on the best possible API design without being constrained by legacy usage patterns
+- **Version bumps**: Use semantic versioning to communicate breaking changes to users
+
+This project prioritizes **code quality, type safety, and clean architecture** over maintaining compatibility with previous versions. Users should expect and plan for breaking changes between versions as the codebase evolves.
+
 ## 📚 Additional Resources
 
 - [uv documentation](https://docs.astral.sh/uv/)
