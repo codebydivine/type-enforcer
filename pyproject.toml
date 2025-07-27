@@ -80,11 +80,7 @@ ignore = [
     "E501",    # line too long, handled by ruff format
     "B008",    # do not perform function calls in argument defaults
     "C901",    # too complex
-    "ANN001",  # missing type annotation for function argument
-    "ANN201",  # missing return type annotation for public function
-    "ANN202",  # missing return type annotation for private function
-    "ANN204",  # missing return type annotation for special method __init__
-    "ANN401",  # dynamically typed expressions (Any) are disallowed
+    "ANN401",  # Any usage unavoidable in type validation library
     "S101",    # use of assert detected
     "PLR2004", # magic value used in comparison
     "PLR0913", # too many arguments to function call
@@ -132,6 +128,7 @@ line-ending               = "auto"
 
 [tool.mypy]
 python_version         = "3.13"
+strict                 = true
 warn_unused_configs    = true
 ignore_missing_imports = true
 

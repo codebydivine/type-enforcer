@@ -25,13 +25,13 @@ from typing import (
 
 # Cache type introspection functions at the module level for performance
 @cache
-def _cached_get_origin(tp: type) -> Any:
+def _cached_get_origin(tp: type) -> type | None:
     """Cached version of get_origin."""
     return get_origin(tp)
 
 
 @cache
-def _cached_get_args(tp: type) -> tuple:
+def _cached_get_args(tp: type) -> tuple[type, ...]:
     """Cached version of get_args."""
     return get_args(tp)
 
@@ -48,7 +48,7 @@ def _cached_is_optional(type_hint: type) -> bool:
 
 
 @cache
-def _cached_get_type_hints(tp: type) -> dict:
+def _cached_get_type_hints(tp: type) -> dict[str, type]:
     """Cached version of get_type_hints."""
     try:
         return get_type_hints(tp)
@@ -95,7 +95,7 @@ def _type_name(type_: type) -> str:
 class ValidationError(Exception):
     """Exception raised when type validation fails."""
 
-    def __init__(self, message: str, path: str = ""):
+    def __init__(self, message: str, path: str = "") -> None:
         self.path = path
         self.message = message
         super().__init__(f"{path}: {message}" if path else message)
@@ -109,7 +109,7 @@ class TypeEnforcer[T]:
     a specified target type at runtime, with detailed error reporting.
     """
 
-    def __init__(self, target_type: type[T]):
+    def __init__(self, target_type: type[T]) -> None:
         """
         Initialize a new TypeEnforcer.
 
@@ -141,7 +141,7 @@ class TypeEnforcer[T]:
         Raises:
             ValidationError: If the data doesn't match the target type
         """
-        return self._validate_value(data, self.target_type, "")
+        return self._validate_value(data, self.target_type, "")  # type: ignore[no-any-return]
 
     def _validate_value(self, value: Any, expected_type: type, path: str) -> Any:
         """Recursive validation function that handles complex types."""
@@ -159,7 +159,7 @@ class TypeEnforcer[T]:
         origin = _cached_get_origin(expected_type)
 
         # Handle Literal types early to properly handle None
-        if origin is Literal:
+        if origin is Literal:  # type: ignore[comparison-overlap]
             return self._validate_literal(value, expected_type, path)
 
         # Handle None for Optional types using cached function
@@ -177,7 +177,7 @@ class TypeEnforcer[T]:
             return self._validate_primitive(value, expected_type, path)
 
         # Handle Union types (both Union[...] and X | Y)
-        if origin is Union or origin is types.UnionType:
+        if origin is Union or origin is types.UnionType:  # type: ignore[comparison-overlap]
             return self._validate_union(value, expected_type, path)
 
         # Handle list types
@@ -288,7 +288,7 @@ class TypeEnforcer[T]:
             return value
 
         # Handle Tuple[X, ...] - homogeneous tuple
-        if args[-1] is ... and len(args) == 2:
+        if len(args) == 2 and args[-1] is ...:  # type: ignore[comparison-overlap]
             item_type = args[0]
             result = []
 
@@ -296,7 +296,7 @@ class TypeEnforcer[T]:
             if isinstance(value, tuple):
                 # Explicitly cast for mypy - removed, use ignore instead
                 # value_tuple: tuple = value
-                for i, item in enumerate(value):  # type: ignore[arg-type, var-annotated]
+                for i, item in enumerate(value):
                     item_path = f"{path}[{i}]"
                     validated_item_homog = self._validate_value(item, item_type, item_path)
                     result.append(validated_item_homog)
@@ -311,7 +311,7 @@ class TypeEnforcer[T]:
         # Ensure value is a tuple before iterating
         if isinstance(value, tuple):
             # Explicitly cast for mypy
-            value_tuple_fixed: tuple = value  # Renamed variable
+            value_tuple_fixed: tuple[Any, ...] = value  # Renamed variable
             for i, (item, arg_type) in enumerate(zip(value_tuple_fixed, args, strict=False)):
                 item_path = f"{path}[{i}]"
                 validated_item: Any = self._validate_value(item, arg_type, item_path)
